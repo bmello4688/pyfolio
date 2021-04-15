@@ -952,21 +952,24 @@ def get_top_drawdowns(returns, top=10):
     underwater = df_cum / running_max - 1
 
     drawdowns = []
-    for _ in range(top):
-        peak, valley, recovery = get_max_drawdown_underwater(underwater)
-        # Slice out draw-down period
-        if not pd.isnull(recovery):
-            underwater.drop(underwater[peak: recovery].index[1:-1],
-                            inplace=True)
-        else:
-            # drawdown has not ended yet
-            underwater = underwater.loc[:peak]
+    try:
+        for _ in range(top):
+            peak, valley, recovery = get_max_drawdown_underwater(underwater)
+            # Slice out draw-down period
+            if not pd.isnull(recovery):
+                underwater.drop(underwater[peak: recovery].index[1:-1],
+                                inplace=True)
+            else:
+                # drawdown has not ended yet
+                underwater = underwater.loc[:peak]
 
-        drawdowns.append((peak, valley, recovery))
-        if ((len(returns) == 0)
-                or (len(underwater) == 0)
-                or (np.min(underwater) == 0)):
-            break
+            drawdowns.append((peak, valley, recovery))
+            if ((len(returns) == 0)
+                    or (len(underwater) == 0)
+                    or (np.min(underwater) == 0)):
+                break
+    except IndexError:
+        pass #ran out of tops
 
     return drawdowns
 
@@ -1022,7 +1025,7 @@ def gen_drawdown_table(returns, top=10):
     df_drawdowns['Recovery date'] = pd.to_datetime(
         df_drawdowns['Recovery date'])
 
-    return df_drawdowns
+    return df_drawdowns.dropna()
 
 
 def rolling_volatility(returns, rolling_vol_window):
